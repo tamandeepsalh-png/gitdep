@@ -10,18 +10,17 @@ on:
   workflow_dispatch:
 
 env:
-  AZURE_FUNCTIONAPP_PACKAGE_PATH: '.'
-  NODE_VERSION: '22.x'
+  AZURE_FUNCTIONAPP_PACKAGE_PATH: '.' # set this to the path to your web app project, defaults to the repository root
+  NODE_VERSION: '22.x' # set this to the node version to use (supports 8.x, 10.x, 12.x)
 
 jobs:
   build:
     runs-on: windows-latest
-
     permissions:
-      contents: read
-
+      contents: read #This is required for actions/checkout
+      
     steps:
-      - name: Checkout GitHub Action
+      - name: 'Checkout GitHub Action'
         uses: actions/checkout@v4
 
       - name: Setup Node ${{ env.NODE_VERSION }} Environment
@@ -29,7 +28,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Resolve Project Dependencies Using Npm
+      - name: 'Resolve Project Dependencies Using Npm'
         shell: pwsh
         run: |
           pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
@@ -47,21 +46,28 @@ jobs:
   deploy:
     runs-on: windows-latest
     needs: build
-
     permissions:
-      contents: read
+      id-token: write #This is required for requesting the JWT
+      contents: read #This is required for actions/checkout
 
     steps:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
           name: node-app
+      
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_A03950320284483AA30275F31F52C56D }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_02CD5B7771F0419EB3AADCA09AC88092 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_170CF1D2BE6E4F04A1C7987F7EDFC3C4 }}
 
-      - name: Run Azure Functions Action
+      - name: 'Run Azure Functions Action'
         uses: Azure/functions-action@v1
         id: fa
         with:
           app-name: 'tamanFA'
           slot-name: 'Production'
-          publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
           package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+          
