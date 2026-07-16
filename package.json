@@ -1,0 +1,7 @@
+{
+  "name": "my-function-app",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "func start"
+  }
+}
